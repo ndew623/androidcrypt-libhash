@@ -376,9 +376,7 @@ STF_TEST(SHA384, TestMoveConstructor)
 
     SHA384 sha384_move = std::move(sha384_copy);
 
-    STF_ASSERT_NE(sha384_copy, sha384_move);
-
-    STF_ASSERT_FALSE(sha384_copy.IsFinalized());
+    STF_ASSERT_EQ(sha384, sha384_move);
 
     STF_ASSERT_TRUE(sha384_move.IsFinalized());
 

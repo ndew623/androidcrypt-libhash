@@ -36,6 +36,135 @@
 namespace Terra::Crypto::Hashing
 {
 
+namespace
+{
+
+/*
+ *  CloneHashFunction()
+ *
+ *  Description:
+ *      This function will copy the object stored in the unique pointer.
+ *      The reason for this special function is that since Hash is a pure
+ *      virtual object, a deep copy is required that is based on the actual
+ *      underlying hashing object (e.g., SHA1, SHA256, etc).
+ *
+ *  Parameters:
+ *      source [out]
+ *          The source hash object to clone.
+ *
+ *  Returns:
+ *      A new hash object of the same type as "source" and containing the same
+ *      state information.
+ *
+ *  Comments:
+ *      None.
+ */
+std::unique_ptr<Hash> CloneHashFunction(const std::unique_ptr<Hash> &source)
+{
+    std::unique_ptr<Hash> new_hash;
+
+    // Ensure the source object is valid
+    if (!source) throw HashException("The source hash object is invalid");
+
+    // Create an object to do hashing based on the type requested
+    switch (source->GetHashAlgorithm())
+    {
+        case HashAlgorithm::SHA1:
+            new_hash =
+                std::make_unique<SHA1>(*(dynamic_cast<SHA1 *>(source.get())));
+            break;
+
+        case HashAlgorithm::SHA256:
+            new_hash = std::make_unique<SHA256>(
+                *(dynamic_cast<SHA256 *>(source.get())));
+            break;
+
+        case HashAlgorithm::SHA384:
+            new_hash = std::make_unique<SHA384>(
+                *(dynamic_cast<SHA384 *>(source.get())));
+            break;
+
+        case HashAlgorithm::SHA512:
+            new_hash = std::make_unique<SHA512>(
+                *(dynamic_cast<SHA512 *>(source.get())));
+            break;
+
+        default:
+            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 4,
+                          "New hash algorithms need explicit support here");
+            throw HashException("Unknown hashing function requested");
+            break;
+    }
+
+    return new_hash;
+}
+
+/*
+ *  CompareHashFunction()
+ *
+ *  Description:
+ *      This function will compare the given hash objects to see if their
+ *      underlying hash objects are identical.
+ *
+ *  Parameters:
+ *      hash1 [out]
+ *          The first hash object to consider.
+ *
+ *      hash2 [in]
+ *          The second hash object to consider.
+ *
+ *  Returns:
+ *      True if the hash objects are identical.
+ *
+ *  Comments:
+ *      None.
+ */
+bool CompareHashFunction(const std::unique_ptr<Hash> &hash1,
+                         const std::unique_ptr<Hash> &hash2)
+{
+    bool result{};
+
+    // Ensure the source object is valid
+    if (!hash1 || !hash2) throw HashException("The hash object(s) are invalid");
+
+    // Ensure the two objects are of the same type
+    if (hash1->GetHashAlgorithm() != hash2->GetHashAlgorithm()) return false;
+
+    // Create an object to do hashing based on the type requested
+    switch (hash1->GetHashAlgorithm())
+    {
+        case HashAlgorithm::SHA1:
+            result = (*dynamic_cast<SHA1 *>(hash1.get()) ==
+                      *dynamic_cast<SHA1 *>(hash2.get()));
+            break;
+
+        case HashAlgorithm::SHA256:
+            result = (*dynamic_cast<SHA256*>(hash1.get()) ==
+                      *dynamic_cast<SHA256 *>(hash2.get()));
+            break;
+
+        case HashAlgorithm::SHA384:
+            result = (*dynamic_cast<SHA256 *>(hash1.get()) ==
+                      *dynamic_cast<SHA256 *>(hash2.get()));
+            break;
+
+        case HashAlgorithm::SHA512:
+            result = (*dynamic_cast<SHA256 *>(hash1.get()) ==
+                      *dynamic_cast<SHA256 *>(hash2.get()));
+            break;
+
+        default:
+            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 4,
+                          "New hash algorithms need explicit support here");
+            throw HashException("Unknown hashing function requested");
+            break;
+    }
+
+    return result;
+}
+
+} // namespace
+
 /*
  *  HMAC::HMAC()
  *
@@ -59,6 +188,7 @@ namespace Terra::Crypto::Hashing
 HMAC::HMAC(const HashAlgorithm hash_algorithm) :
     keyed{false},
     block_size{0},
+    message_digest{},
     K0{},
     K0_ipad{},
     K0_opad{}
@@ -166,14 +296,18 @@ HMAC::HMAC(const HashAlgorithm hash_algorithm,
  *  Comments:
  *      None.
  */
-HMAC::HMAC(const HMAC &other) noexcept
+HMAC::HMAC(const HMAC &other) noexcept :
+    keyed{other.keyed},
+    block_size{other.block_size},
+    message_digest{},
+    K0{},
+    K0_ipad{},
+    K0_opad{}
 {
     // Clone the hash object
     hash = CloneHashFunction(other.hash);
 
     // Copy the other values
-    keyed = other.keyed;
-    block_size = other.block_size;
     std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
     std::memcpy(K0, other.K0, sizeof(K0));
     std::memcpy(K0_ipad, other.K0_ipad, sizeof(K0_ipad));
@@ -196,21 +330,22 @@ HMAC::HMAC(const HMAC &other) noexcept
  *  Comments:
  *      None.
  */
-HMAC::HMAC(HMAC &&other) noexcept
+HMAC::HMAC(HMAC &&other) noexcept :
+    keyed{other.keyed},
+    block_size{other.block_size},
+    message_digest{},
+    K0{},
+    K0_ipad{},
+    K0_opad{}
 {
     // Clone the hash object
     hash = CloneHashFunction(other.hash);
 
     // Copy the other values
-    keyed = other.keyed;
-    block_size = other.block_size;
     std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
     std::memcpy(K0, other.K0, sizeof(K0));
     std::memcpy(K0_ipad, other.K0_ipad, sizeof(K0_ipad));
     std::memcpy(K0_opad, other.K0_opad, sizeof(K0_opad));
-
-    // Reset the other object
-    other.Reset();
 }
 
 /*
@@ -257,6 +392,9 @@ HMAC::~HMAC() noexcept
  */
 HMAC &HMAC::operator=(const HMAC &other)
 {
+    // Do not copy the same object
+    if (this == &other) return *this;
+
     // Make a copy of the hash function object
     hash = CloneHashFunction(other.hash);
 
@@ -289,6 +427,9 @@ HMAC &HMAC::operator=(const HMAC &other)
  */
 HMAC &HMAC::operator=(HMAC &&other) noexcept
 {
+    // Do not move the same object
+    if (this == &other) return *this;
+
     // Make a copy of the hash function object
     hash = CloneHashFunction(other.hash);
 
@@ -326,8 +467,18 @@ HMAC &HMAC::operator=(HMAC &&other) noexcept
  */
 bool HMAC::operator==(const HMAC &other) const noexcept
 {
-    // Compare the underlying hashing objects
-    if (!CompareHashFunction(hash, other.hash)) return false;
+    // Is this the same object?
+    if (this == &other) return true;
+
+    try
+    {
+        // Compare the underlying hashing objects
+        if (!CompareHashFunction(hash, other.hash)) return false;
+    }
+    catch (const HashException &)
+    {
+        return false;
+    }
 
     // Ensure the keys and block size values are the same
     if ((keyed != other.keyed) || (block_size != other.block_size))
@@ -338,24 +489,15 @@ bool HMAC::operator==(const HMAC &other) const noexcept
     // Compare the message digest values
     if (std::memcmp(message_digest,
                     other.message_digest,
-                    hash->GetDigestLength()))
+                    hash->GetDigestLength()) != 0)
     {
         return false;
     }
 
     // Compare the keying buffers
-    if (std::memcmp(K0, other.K0, sizeof(K0)))
-    {
-        return false;
-    }
-    if (std::memcmp(K0_ipad, other.K0_ipad, sizeof(K0_ipad)))
-    {
-        return false;
-    }
-    if (std::memcmp(K0_opad, other.K0_opad, sizeof(K0_opad)))
-    {
-        return false;
-    }
+    if (std::memcmp(K0, other.K0, sizeof(K0)) != 0) return false;
+    if (std::memcmp(K0_ipad, other.K0_ipad, sizeof(K0_ipad)) != 0) return false;
+    if (std::memcmp(K0_opad, other.K0_opad, sizeof(K0_opad)) != 0) return false;
 
     return true;
 }
@@ -670,132 +812,6 @@ std::span<std::uint8_t> HMAC::Result(std::span<std::uint8_t> result) const
 {
     return hash->Result(result);
 }
-
-/*
- *  HMAC::CloneHashFunction()
- *
- *  Description:
- *      This function will copy the object stored in the unique pointer.
- *      The reason for this special function is that since Hash is a pure
- *      virtual object, a deep copy is required that is based on the actual
- *      underlying hashing object (e.g., SHA1, SHA256, etc).
- *
- *  Parameters:
- *      source [out]
- *          The source hash object to clone.
- *
- *  Returns:
- *      A new hash object of the same type as "source" and containing the same
- *      state information.
- *
- *  Comments:
- *      None.
- */
-std::unique_ptr<Hash> HMAC::CloneHashFunction(
-                                    const std::unique_ptr<Hash> &source) const
-{
-    std::unique_ptr<Hash> new_hash;
-
-    // Ensure the source object is valid
-    if (!source) throw HashException("The source hash object is invalid");
-
-    // Create an object to do hashing based on the type requested
-    switch (source->GetHashAlgorithm())
-    {
-        case HashAlgorithm::SHA1:
-            new_hash =
-                std::make_unique<SHA1>(*(dynamic_cast<SHA1 *>(source.get())));
-            break;
-
-        case HashAlgorithm::SHA256:
-            new_hash = std::make_unique<SHA256>(
-                *(dynamic_cast<SHA256 *>(source.get())));
-            break;
-
-        case HashAlgorithm::SHA384:
-            new_hash = std::make_unique<SHA384>(
-                *(dynamic_cast<SHA384 *>(source.get())));
-            break;
-
-        case HashAlgorithm::SHA512:
-            new_hash = std::make_unique<SHA512>(
-                *(dynamic_cast<SHA512 *>(source.get())));
-            break;
-
-        default:
-            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 4,
-                          "New hash algorithms need explicit support here");
-            throw HashException("Unknown hashing function requested");
-            break;
-    }
-
-    return new_hash;
-}
-
-/*
- *  HMAC::CompareHashFunction()
- *
- *  Description:
- *      This function will compare the given hash objects to see if their
- *      underlying hash objects are identical.
- *
- *  Parameters:
- *      hash1 [out]
- *          The first hash object to consider.
- *
- *      hash2 [in]
- *          The second hash object to consider.
- *
- *  Returns:
- *      True if the hash objects are identical.
- *
- *  Comments:
- *      None.
- */
-bool HMAC::CompareHashFunction(const std::unique_ptr<Hash> &hash1,
-                               const std::unique_ptr<Hash> &hash2) const
-{
-    bool result;
-
-    // Ensure the source object is valid
-    if (!hash1 || !hash2) throw HashException("The hash object(s) are invalid");
-
-    // Ensure the two objects are of the same type
-    if (hash1->GetHashAlgorithm() != hash2->GetHashAlgorithm()) return false;
-
-    // Create an object to do hashing based on the type requested
-    switch (hash1->GetHashAlgorithm())
-    {
-        case HashAlgorithm::SHA1:
-            result = (*dynamic_cast<SHA1 *>(hash1.get()) ==
-                      *dynamic_cast<SHA1 *>(hash2.get()));
-            break;
-
-        case HashAlgorithm::SHA256:
-            result = (*dynamic_cast<SHA256*>(hash1.get()) ==
-                      *dynamic_cast<SHA256 *>(hash2.get()));
-            break;
-
-        case HashAlgorithm::SHA384:
-            result = (*dynamic_cast<SHA256 *>(hash1.get()) ==
-                      *dynamic_cast<SHA256 *>(hash2.get()));
-            break;
-
-        case HashAlgorithm::SHA512:
-            result = (*dynamic_cast<SHA256 *>(hash1.get()) ==
-                      *dynamic_cast<SHA256 *>(hash2.get()));
-            break;
-
-        default:
-            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 4,
-                          "New hash algorithms need explicit support here");
-            throw HashException("Unknown hashing function requested");
-            break;
-    }
-
-    return result;
-}
-
 
 /*
  *  operator<<() for HMAC object

@@ -195,10 +195,25 @@ constexpr void Step3(const std::size_t t,
  *  Comments:
  *      None.
  */
-SHA256::SHA256() noexcept : Hash()
+SHA256::SHA256() noexcept :
+    Hash(),
+    message_length{},
+    input_block_length{},
+    input_block{},
+    message_digest{},
+    W{},
+    a{},
+    b{},
+    c{},
+    d{},
+    e{},
+    f{},
+    g{},
+    h{},
+    T{}
 {
     // Initialize all data members
-    Reset();
+    SHA256::Reset();
 }
 
 /*
@@ -228,16 +243,30 @@ SHA256::SHA256() noexcept : Hash()
 SHA256::SHA256(const std::span<const std::uint8_t> data,
                bool auto_finalize,
                bool spaces) :
-    Hash(spaces)
+    Hash(spaces),
+    message_length{},
+    input_block_length{},
+    input_block{},
+    message_digest{},
+    W{},
+    a{},
+    b{},
+    c{},
+    d{},
+    e{},
+    f{},
+    g{},
+    h{},
+    T{}
 {
     // Initialize all data members
-    Reset();
+    SHA256::Reset();
 
     // Process the input data
-    Input(data);
+    SHA256::Input(data);
 
     // If asked to finalize the message digest, do it now
-    if (auto_finalize) Finalize();
+    if (auto_finalize) SHA256::Finalize();
 }
 
 /*
@@ -272,73 +301,6 @@ SHA256::SHA256(const std::string_view data, bool auto_finalize, bool spaces) :
 {
     // It is assumed that a character is eight bits
     static_assert(CHAR_BIT == 8);
-}
-
-/*
- *  SHA256::SHA256()
- *
- *  Description:
- *      This is a copy constructor for the SHA256 object.
- *
- *  Parameters:
- *      other [in]
- *          The other SHA256 object from which to copy.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *      None.
- */
-SHA256::SHA256(const SHA256 &other) noexcept : Hash(other)
-{
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length > 0)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-}
-
-/*
- *  SHA256::SHA256()
- *
- *  Description:
- *      This is a move constructor for the SHA256 object.
- *
- *  Parameters:
- *      other [in]
- *          The other SHA256 object from which to move state.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *      None.
- */
-SHA256::SHA256(SHA256 &&other) noexcept : Hash(other)
-{
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length > 0)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-
-    // Reset the other object's state
-    other.Reset();
 }
 
 /*
@@ -378,86 +340,6 @@ SHA256::~SHA256() noexcept
 }
 
 /*
- *  SHA256::operator=()
- *
- *  Description:
- *      Copy assignment operator to copy data from the other object.
- *
- *  Parameters:
- *      other [in]
- *          The other object from which to copy.
- *
- *  Returns:
- *      A reference to this object.
- *
- *  Comments:
- *      None.
- */
-SHA256 &SHA256::operator=(const SHA256 &other) noexcept
-{
-    // Do nothing on self-assignment
-    if (this == &other) return *this;
-
-    // Call the base class copy assignment function
-    Hash::operator=(other);
-
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length > 0)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-
-    return *this;
-}
-
-/*
- *  SHA256::operator=()
- *
- *  Description:
- *      Move assignment operator to move data from the other object.
- *
- *  Parameters:
- *      other [in]
- *          The other object from which to move data.
- *
- *  Returns:
- *      A reference to this object.
- *
- *  Comments:
- *      None.
- */
-SHA256 &SHA256::operator=(SHA256 &&other) noexcept
-{
-    // Do nothing on self-assignment
-    if (this == &other) return *this;
-
-    // Call the base class move assignment function
-    Hash::operator=(other);
-
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-
-    return *this;
-}
-
-/*
  *  SHA256::operator==()
  *
  *  Description:
@@ -491,7 +373,7 @@ bool SHA256::operator==(const SHA256 &other) const noexcept
 
     // Compare the input block
     if ((input_block_length > 0) &&
-        std::memcmp(input_block, other.input_block, input_block_length))
+        (std::memcmp(input_block, other.input_block, input_block_length) != 0))
     {
         return false;
     }
@@ -499,7 +381,7 @@ bool SHA256::operator==(const SHA256 &other) const noexcept
     // Compare the message digest
     if (std::memcmp(message_digest,
                     other.message_digest,
-                    sizeof(message_digest)))
+                    sizeof(message_digest)) != 0)
     {
         return false;
     }
@@ -946,7 +828,7 @@ std::string SHA256::Result() const
 
     for (std::size_t i = 0; i < Digest_Word_Count; i++)
     {
-        if (space_separate_words && i) oss << " ";
+        if (space_separate_words && (i > 0)) oss << " ";
         oss << std::setw(8) << message_digest[i];
     }
 

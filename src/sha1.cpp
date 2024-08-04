@@ -148,10 +148,21 @@ constexpr void Step3(const std::size_t t,
  *  Comments:
  *      None.
  */
-SHA1::SHA1() noexcept : Hash()
+SHA1::SHA1() noexcept :
+    Hash(),
+    message_length{},
+    input_block_length{},
+    input_block{},
+    message_digest{},
+    W{},
+    a{},
+    b{},
+    c{},
+    d{},
+    e{}
 {
     // Initialize all data members
-    Reset();
+    SHA1::Reset();
 }
 
 /*
@@ -181,16 +192,26 @@ SHA1::SHA1() noexcept : Hash()
 SHA1::SHA1(const std::span<const std::uint8_t> data,
            bool auto_finalize,
            bool spaces) :
-    Hash(spaces)
+    Hash(spaces),
+    message_length{},
+    input_block_length{},
+    input_block{},
+    message_digest{},
+    W{},
+    a{},
+    b{},
+    c{},
+    d{},
+    e{}
 {
     // Initialize all data members
-    Reset();
+    SHA1::Reset();
 
     // Process the input data
-    Input(data);
+    SHA1::Input(data);
 
     // If asked to finalize the message digest, do it now
-    if (auto_finalize) Finalize();
+    if (auto_finalize) SHA1::Finalize();
 }
 
 /*
@@ -228,73 +249,6 @@ SHA1::SHA1(const std::string_view data, bool auto_finalize, bool spaces) :
 }
 
 /*
- *  SHA1::SHA1()
- *
- *  Description:
- *      This is a copy constructor for the SHA1 object.
- *
- *  Parameters:
- *      other [in]
- *          The other SHA1 object from which to copy.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *      None.
- */
-SHA1::SHA1(const SHA1 &other) noexcept : Hash(other)
-{
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length > 0)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-}
-
-/*
- *  SHA1::SHA1()
- *
- *  Description:
- *      This is a move constructor for the SHA1 object.
- *
- *  Parameters:
- *      other [in]
- *          The other SHA1 object from which to move state.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *      None.
- */
-SHA1::SHA1(SHA1 &&other) noexcept : Hash(other)
-{
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length > 0)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-
-    // Reset the other object's state
-    other.Reset();
-}
-
-/*
  *  SHA1::~SHA1()
  *
  *  Description:
@@ -324,89 +278,6 @@ SHA1::~SHA1() noexcept
     SecUtil::SecureErase(d);
     SecUtil::SecureErase(e);
     SecUtil::SecureErase(message_digest, sizeof(message_digest));
-}
-
-/*
- *  SHA1::operator=()
- *
- *  Description:
- *      Copy assignment operator to copy data from the other object.
- *
- *  Parameters:
- *      other [in]
- *          The other object from which to copy.
- *
- *  Returns:
- *      A reference to this object.
- *
- *  Comments:
- *      None.
- */
-SHA1 &SHA1::operator=(const SHA1 &other) noexcept
-{
-    // Do nothing on self-assignment
-    if (this == &other) return *this;
-
-    // Call the base class copy assignment function
-    Hash::operator=(other);
-
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length > 0)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-
-    return *this;
-}
-
-/*
- *  SHA1::operator=()
- *
- *  Description:
- *      Move assignment operator to move data from the other object.
- *
- *  Parameters:
- *      other [in]
- *          The other object from which to move data.
- *
- *  Returns:
- *      A reference to this object.
- *
- *  Comments:
- *      None.
- */
-SHA1 &SHA1::operator=(SHA1 &&other) noexcept
-{
-    // Do nothing on self-assignment
-    if (this == &other) return *this;
-
-    // Call the base class move assignment function
-    Hash::operator=(other);
-
-    // Assign member data
-    message_length = other.message_length;
-    input_block_length = other.input_block_length;
-
-    // Copy the input block
-    if (other.input_block_length > 0)
-    {
-        std::memcpy(input_block, other.input_block, other.input_block_length);
-    }
-
-    // Copy the message digest
-    std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
-
-    // Reset the other object
-    other.Reset();
-
-    return *this;
 }
 
 /*
@@ -443,7 +314,7 @@ bool SHA1::operator==(const SHA1 &other) const noexcept
 
     // Compare the input block
     if ((input_block_length > 0) &&
-        std::memcmp(input_block, other.input_block, input_block_length))
+        (std::memcmp(input_block, other.input_block, input_block_length) != 0))
     {
         return false;
     }
@@ -451,7 +322,7 @@ bool SHA1::operator==(const SHA1 &other) const noexcept
     // Compare the message digest values
     if (std::memcmp(message_digest,
                     other.message_digest,
-                    sizeof(message_digest)))
+                    sizeof(message_digest)) != 0)
     {
         return false;
     }
@@ -905,7 +776,7 @@ std::string SHA1::Result() const
 
     for (std::size_t i = 0; i < Digest_Word_Count; i++)
     {
-        if (space_separate_words && i) oss << " ";
+        if (space_separate_words && (i > 0)) oss << " ";
         oss << std::setw(8) << message_digest[i];
     }
 

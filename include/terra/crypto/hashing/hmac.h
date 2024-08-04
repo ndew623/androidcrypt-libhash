@@ -93,11 +93,6 @@ class HMAC
         }
 
     protected:
-        std::unique_ptr<Hash> CloneHashFunction(
-                                    const std::unique_ptr<Hash> &source) const;
-        bool CompareHashFunction(const std::unique_ptr<Hash> &hash1,
-                                 const std::unique_ptr<Hash> &hash2) const;
-
         std::unique_ptr<Hash> hash;
         bool keyed;
         std::size_t block_size;

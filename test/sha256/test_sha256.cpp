@@ -352,9 +352,7 @@ STF_TEST(SHA256, TestMoveConstructor)
 
     SHA256 sha256_move = std::move(sha256_copy);
 
-    STF_ASSERT_NE(sha256_copy, sha256_move);
-
-    STF_ASSERT_FALSE(sha256_copy.IsFinalized());
+    STF_ASSERT_EQ(sha256, sha256_move);
 
     STF_ASSERT_TRUE(sha256_move.IsFinalized());
 

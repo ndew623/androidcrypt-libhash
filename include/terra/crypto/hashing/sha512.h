@@ -111,13 +111,13 @@ struct SHA512MessageLength
 std::ostream &operator<<(std::ostream &os, const SHA512MessageLength &length);
 
 // Define the SHA512 class
-class SHA512 : public Hash
+class SHA512 final : public Hash
 {
     public:
         // Maximum message size per FIPS 180-4 (in octets)
         static constexpr SHA512MessageLength Max_Message_Size
         {
-            (std::uint64_t(1)<<61) - 1,
+            (static_cast<std::uint64_t>(1) << 61) - 1,
             0xffff'ffff'ffff'ffff
         };
 
@@ -146,12 +146,12 @@ class SHA512 : public Hash
         SHA512(const std::string_view data,
                bool auto_finalize = true,
                bool spaces = true);
-        SHA512(const SHA512 &other) noexcept;
-        SHA512(SHA512 &&other) noexcept;
+        SHA512(const SHA512 &other) = default;
+        SHA512(SHA512 &&other) = default;
         virtual ~SHA512() noexcept;
 
-        SHA512 &operator=(const SHA512 &other) noexcept;
-        SHA512 &operator=(SHA512 &&other) noexcept;
+        SHA512 &operator=(const SHA512 &other) = default;
+        SHA512 &operator=(SHA512 &&other) = default;
         bool operator==(const SHA512 &other) const noexcept;
         bool operator!=(const SHA512 &other) const noexcept;
 

@@ -109,13 +109,13 @@ struct SHA384MessageLength
 std::ostream &operator<<(std::ostream &os, const SHA384MessageLength &length);
 
 // Define the SHA384 class
-class SHA384 : public Hash
+class SHA384 final : public Hash
 {
     public:
         // Maximum message size per FIPS 180-4 (in octets)
         static constexpr SHA384MessageLength Max_Message_Size
         {
-            (std::uint64_t(1)<<61) - 1,
+            (static_cast<std::uint64_t>(1) << 61) - 1,
             0xffff'ffff'ffff'ffff
         };
 
@@ -144,12 +144,12 @@ class SHA384 : public Hash
         SHA384(const std::string_view data,
                bool auto_finalize = true,
                bool spaces = true);
-        SHA384(const SHA384 &other) noexcept;
-        SHA384(SHA384 &&other) noexcept;
+        SHA384(const SHA384 &other) = default;
+        SHA384(SHA384 &&other) = default;
         virtual ~SHA384() noexcept;
 
-        SHA384 &operator=(const SHA384 &other) noexcept;
-        SHA384 &operator=(SHA384 &&other) noexcept;
+        SHA384 &operator=(const SHA384 &other) = default;
+        SHA384 &operator=(SHA384 &&other) = default;
         bool operator==(const SHA384 &other) const noexcept;
         bool operator!=(const SHA384 &other) const noexcept;
 

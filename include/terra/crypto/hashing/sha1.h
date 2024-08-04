@@ -52,13 +52,13 @@ namespace Terra::Crypto::Hashing
 using SHA1ResultWordSpan = std::span<std::uint32_t>;
 
 // Define the SHA1 class
-class SHA1 : public Hash
+class SHA1 final : public Hash
 {
     public:
         // Maximum message size per FIPS 180-4 (in octets)
         static constexpr std::uint64_t Max_Message_Size
         {
-            (std::uint64_t(1) << 61) - 1
+            (static_cast<std::uint64_t>(1) << 61) - 1
         };
 
         // Size of each input block (in octets)
@@ -86,12 +86,12 @@ class SHA1 : public Hash
         SHA1(const std::string_view data,
              bool auto_finalize = true,
              bool spaces = true);
-        SHA1(const SHA1 &other) noexcept;
-        SHA1(SHA1 &&other) noexcept;
+        SHA1(const SHA1 &other) = default;
+        SHA1(SHA1 &&other) = default;
         virtual ~SHA1() noexcept;
 
-        SHA1 &operator=(const SHA1 &other) noexcept;
-        SHA1 &operator=(SHA1 &&other) noexcept;
+        SHA1 &operator=(const SHA1 &other) = default;
+        SHA1 &operator=(SHA1 &&other) = default;
         bool operator==(const SHA1 &other) const noexcept;
         bool operator!=(const SHA1 &other) const noexcept;
 
@@ -124,7 +124,6 @@ class SHA1 : public Hash
         std::uint64_t GetMessageLength() const noexcept;
 
     protected:
-        void InternalReset() noexcept;
         void ProcessMessageBlock(const std::uint8_t message_block[Block_Size]);
         void PadMessage();
 

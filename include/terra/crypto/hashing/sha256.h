@@ -52,13 +52,13 @@ namespace Terra::Crypto::Hashing
 using SHA256ResultWordSpan = std::span<std::uint32_t>;
 
 // Define the SHA256 class
-class SHA256 : public Hash
+class SHA256 final : public Hash
 {
     public:
         // Maximum message size per FIPS 180-4 (in octets)
         static constexpr std::uint64_t Max_Message_Size
         {
-            (std::uint64_t(1) << 61) - 1
+            (static_cast<std::uint64_t>(1) << 61) - 1
         };
 
         // Size of each input block (in octets)
@@ -86,12 +86,12 @@ class SHA256 : public Hash
         SHA256(const std::string_view data,
                bool auto_finalize = true,
                bool spaces = true);
-        SHA256(const SHA256 &other) noexcept;
-        SHA256(SHA256 &&other) noexcept;
+        SHA256(const SHA256 &other) = default;
+        SHA256(SHA256 &&other) = default;
         virtual ~SHA256() noexcept;
 
-        SHA256 &operator=(const SHA256 &other) noexcept;
-        SHA256 &operator=(SHA256 &&other) noexcept;
+        SHA256 &operator=(const SHA256 &other) = default;
+        SHA256 &operator=(SHA256 &&other) = default;
         bool operator==(const SHA256 &other) const noexcept;
         bool operator!=(const SHA256 &other) const noexcept;
 

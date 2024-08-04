@@ -347,9 +347,7 @@ STF_TEST(SHA1, TestMoveConstructor)
 
     SHA1 sha1_move = std::move(sha1_copy);
 
-    STF_ASSERT_NE(sha1_copy, sha1_move);
-
-    STF_ASSERT_FALSE(sha1_copy.IsFinalized());
+    STF_ASSERT_EQ(sha1, sha1_move);
 
     STF_ASSERT_TRUE(sha1_move.IsFinalized());
 

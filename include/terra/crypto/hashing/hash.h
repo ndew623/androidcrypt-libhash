@@ -96,12 +96,12 @@ class Hash
     public:
         Hash() noexcept;
         Hash(bool spaces) noexcept;
-        Hash(const Hash &other) noexcept;
-        Hash(Hash &&other) noexcept;
+        Hash(const Hash &other) = default;
+        Hash(Hash &&other) = default;
         virtual ~Hash() noexcept;
 
-        Hash &operator=(const Hash &other) noexcept;
-        Hash &operator=(Hash &&other) noexcept;
+        Hash &operator=(const Hash &other) = default;
+        Hash &operator=(Hash &&other) = default;
         bool operator==(const Hash &other) const noexcept;
         bool operator!=(const Hash &other) const noexcept;
 

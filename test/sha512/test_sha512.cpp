@@ -455,9 +455,7 @@ STF_TEST(SHA512, TestMoveConstructor)
 
     SHA512 sha512_move = std::move(sha512_copy);
 
-    STF_ASSERT_NE(sha512_copy, sha512_move);
-
-    STF_ASSERT_FALSE(sha512_copy.IsFinalized());
+    STF_ASSERT_EQ(sha512, sha512_move);
 
     STF_ASSERT_TRUE(sha512_move.IsFinalized());
 

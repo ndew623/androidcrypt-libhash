@@ -49,7 +49,7 @@ namespace Terra::Crypto::Hashing
  */
 std::size_t GetHashDigestLength(HashAlgorithm hash_algorithm)
 {
-    std::size_t length;
+    std::size_t length{};
 
     switch (hash_algorithm)
     {
@@ -124,52 +124,6 @@ Hash::Hash(bool spaces) noexcept :
 }
 
 /*
- *  Hash::Hash()
- *
- *  Description:
- *      This is the copy constructor for the Hash object.
- *
- *  Parameters:
- *      other [in]
- *          The other Hash object from which to copy.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *      None.
- */
-Hash::Hash(const Hash &other) noexcept :
-    space_separate_words(other.space_separate_words),
-    digest_finalized(other.digest_finalized),
-    corrupted(other.corrupted)
-{
-}
-
-/*
- *  Hash::Hash()
- *
- *  Description:
- *      This is the move constructor for the Hash object.
- *
- *  Parameters:
- *      other [in]
- *          The other Hash object from which to move.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *      None.
- */
-Hash::Hash(Hash &&other) noexcept :
-    space_separate_words(other.space_separate_words),
-    digest_finalized(other.digest_finalized),
-    corrupted(other.corrupted)
-{
-}
-
-/*
  *  Hash::~Hash()
  *
  *  Description:
@@ -193,59 +147,6 @@ Hash::~Hash() noexcept
 }
 
 /*
- *  Hash::operator=()
- *
- *  Description:
- *      Copy assignment operator that copies the state information from other
- *      to this object.
- *
- *  Parameters:
- *      other [in]
- *          The other object from which to copy.
- *
- *  Returns:
- *      A reference to this object.
- *
- *  Comments:
- *      None.
- */
-Hash &Hash::operator=(const Hash &other) noexcept
-{
-    // Assign member data
-    space_separate_words = other.space_separate_words;
-    digest_finalized = other.digest_finalized;
-    corrupted = other.corrupted;
-
-    return *this;
-}
-
-/*
- *  Hash::operator=()
- *
- *  Description:
- *      Move assignment operator to move data from the other object.
- *
- *  Parameters:
- *      other [in]
- *          The other object from which to move data.
- *
- *  Returns:
- *      A reference to this object.
- *
- *  Comments:
- *      None.
- */
-Hash &Hash::operator=(Hash &&other) noexcept
-{
-    // Assign member data
-    space_separate_words = other.space_separate_words;
-    digest_finalized = other.digest_finalized;
-    corrupted = other.corrupted;
-
-    return *this;
-}
-
-/*
  *  Hash::operator==()
  *
  *  Description:
@@ -263,14 +164,17 @@ Hash &Hash::operator=(Hash &&other) noexcept
  */
 bool Hash::operator==(const Hash &other) const noexcept
 {
-    if ((space_separate_words != other.space_separate_words) ||
-        (digest_finalized != other.digest_finalized) ||
-        (corrupted != other.corrupted))
+    // If it's the same object, it's equal
+    if (this == &other) return true;
+
+    if ((space_separate_words == other.space_separate_words) &&
+        (digest_finalized == other.digest_finalized) &&
+        (corrupted == other.corrupted))
     {
-        return false;
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 /*
