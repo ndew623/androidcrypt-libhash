@@ -934,6 +934,27 @@ STF_TEST(HMAC, TestMoveConstructor)
     oss << hmac2;
     STF_ASSERT_EQ(std::string("de7c9b85 b8b78aa6 bc8a7a36 f70a9070 1c9db4d9"),
                   oss.str());
+
+    // Getting result on the original object should throw since it was moved
+    auto test_func = [&]() { hmac.Result(); };
+    STF_ASSERT_EXCEPTION_E(test_func, HashException);
+
+    // And the HMAC length should indicate zero since the hash object is moved
+    STF_ASSERT_EQ(0, hmac.GetHMACLength());
+
+    // Attempt to re-use the original object, which is possible with re-keying
+    hmac.SetKey(key);
+
+    // The hash should now be 20 for SHA-1
+    STF_ASSERT_EQ(20, hmac.GetHMACLength());
+
+    // Re-compute the hash
+    hmac << "The quick brown fox jumps over the lazy dog";
+    hmac.Finalize();
+    std::ostringstream oss2;
+    oss2 << hmac2;
+    STF_ASSERT_EQ(std::string("de7c9b85 b8b78aa6 bc8a7a36 f70a9070 1c9db4d9"),
+                  oss2.str());
 }
 
 

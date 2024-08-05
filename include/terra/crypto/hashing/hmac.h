@@ -49,7 +49,7 @@ class HMAC
         HMAC(const HashAlgorithm hash_algorithm,
              const std::string_view key,
              const bool spaces = true);
-        HMAC(const HMAC &other) noexcept;
+        HMAC(const HMAC &other);
         HMAC(HMAC &&other) noexcept;
         ~HMAC() noexcept;
 
@@ -74,26 +74,29 @@ class HMAC
 
         std::size_t GetHMACLength() const noexcept
         {
-            return hash->GetDigestLength();
+            return hash ? hash->GetDigestLength() : 0;
         }
 
         bool IsFinalized() const noexcept
         {
-            return hash->IsFinalized();
+            return hash ? hash->IsFinalized() : false;
         }
 
         bool IsCorrupted() const noexcept
         {
-            return hash->IsCorrupted();
+            return hash ? hash->IsCorrupted() : true;
         }
 
         void SpaceSeparateWords(bool spaces) noexcept
         {
-            hash->SpaceSeparateWords(spaces);
+            space_separate_words = spaces;
+            if (hash) hash->SpaceSeparateWords(spaces);
         }
 
     protected:
+        HashAlgorithm hash_algorithm;
         std::unique_ptr<Hash> hash;
+        bool space_separate_words;
         bool keyed;
         std::size_t block_size;
         std::uint8_t message_digest[Max_Digest];

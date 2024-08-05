@@ -36,6 +36,9 @@
 namespace Terra::Crypto::Hashing
 {
 
+// It is assumed that a character is eight bits
+static_assert(CHAR_BIT == 8);
+
 namespace
 {
 
@@ -186,6 +189,8 @@ bool CompareHashFunction(const std::unique_ptr<Hash> &hash1,
  *      function.
  */
 HMAC::HMAC(const HashAlgorithm hash_algorithm) :
+    hash_algorithm{hash_algorithm},
+    space_separate_words{true},
     keyed{false},
     block_size{0},
     message_digest{},
@@ -197,7 +202,10 @@ HMAC::HMAC(const HashAlgorithm hash_algorithm) :
     hash = CreateHashObject(hash_algorithm);
 
     // Ensure the pointer is valid
-    if (!hash) throw HashException("Unknown hashing function requested");
+    if (!hash) throw HashException("Failed to create hashing object");
+
+    // Set spacing preference
+    hash->SpaceSeparateWords(space_separate_words);
 
     // Store the fixed block size to avoid repetitive function calls
     block_size = hash->GetBlockSize();
@@ -234,6 +242,9 @@ HMAC::HMAC(const HashAlgorithm hash_algorithm,
            const bool spaces) :
     HMAC(hash_algorithm)
 {
+    // Set the spacing as requested
+    space_separate_words = spaces;
+
     // Set spacing preference
     hash->SpaceSeparateWords(spaces);
 
@@ -276,8 +287,7 @@ HMAC::HMAC(const HashAlgorithm hash_algorithm,
              key.length()},
          spaces)
 {
-    // It is assumed that a character is eight bits
-    static_assert(CHAR_BIT == 8);
+    // Nothing more to do
 }
 
 /*
@@ -296,7 +306,9 @@ HMAC::HMAC(const HashAlgorithm hash_algorithm,
  *  Comments:
  *      None.
  */
-HMAC::HMAC(const HMAC &other) noexcept :
+HMAC::HMAC(const HMAC &other) :
+    hash_algorithm{other.hash_algorithm},
+    space_separate_words{other.space_separate_words},
     keyed{other.keyed},
     block_size{other.block_size},
     message_digest{},
@@ -331,6 +343,9 @@ HMAC::HMAC(const HMAC &other) noexcept :
  *      None.
  */
 HMAC::HMAC(HMAC &&other) noexcept :
+    hash_algorithm{other.hash_algorithm},
+    hash{std::move(other.hash)},
+    space_separate_words{other.space_separate_words},
     keyed{other.keyed},
     block_size{other.block_size},
     message_digest{},
@@ -338,14 +353,14 @@ HMAC::HMAC(HMAC &&other) noexcept :
     K0_ipad{},
     K0_opad{}
 {
-    // Clone the hash object
-    hash = CloneHashFunction(other.hash);
-
     // Copy the other values
     std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
     std::memcpy(K0, other.K0, sizeof(K0));
     std::memcpy(K0_ipad, other.K0_ipad, sizeof(K0_ipad));
     std::memcpy(K0_opad, other.K0_opad, sizeof(K0_opad));
+
+    // Indicate "other" is no longer keyed
+    other.keyed = false;
 }
 
 /*
@@ -366,6 +381,7 @@ HMAC::HMAC(HMAC &&other) noexcept :
 HMAC::~HMAC() noexcept
 {
     // For security reasons, zero all internal data
+    SecUtil::SecureErase(hash_algorithm);
     SecUtil::SecureErase(keyed);
     SecUtil::SecureErase(block_size);
     SecUtil::SecureErase(message_digest, sizeof(message_digest));
@@ -399,6 +415,8 @@ HMAC &HMAC::operator=(const HMAC &other)
     hash = CloneHashFunction(other.hash);
 
     // Copy the other values
+    hash_algorithm = other.hash_algorithm;
+    space_separate_words = other.space_separate_words;
     keyed = other.keyed;
     block_size = other.block_size;
     std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
@@ -430,16 +448,21 @@ HMAC &HMAC::operator=(HMAC &&other) noexcept
     // Do not move the same object
     if (this == &other) return *this;
 
-    // Make a copy of the hash function object
-    hash = CloneHashFunction(other.hash);
+    // Move the hash pointer
+    hash = std::move(other.hash);
 
     // Copy the other values
+    hash_algorithm = other.hash_algorithm;
+    space_separate_words = other.space_separate_words;
     keyed = other.keyed;
     block_size = other.block_size;
     std::memcpy(message_digest, other.message_digest, sizeof(message_digest));
     std::memcpy(K0, other.K0, sizeof(K0));
     std::memcpy(K0_ipad, other.K0_ipad, sizeof(K0_ipad));
     std::memcpy(K0_opad, other.K0_opad, sizeof(K0_opad));
+
+    // Indicate "other" is no longer keyed
+    other.keyed = false;
 
     return *this;
 }
@@ -480,8 +503,9 @@ bool HMAC::operator==(const HMAC &other) const noexcept
         return false;
     }
 
-    // Ensure the keys and block size values are the same
-    if ((keyed != other.keyed) || (block_size != other.block_size))
+    // Ensure the spacing, keys, and block size values are the same
+    if ((space_separate_words != other.space_separate_words) ||
+        (keyed != other.keyed) || (block_size != other.block_size))
     {
         return false;
     }
@@ -543,8 +567,8 @@ bool HMAC::operator!=(const HMAC &other) const noexcept
  */
 void HMAC::Reset()
 {
-    // Reset the hash function
-    hash->Reset();
+    // Reset the hash function, if there is one
+    if (hash) hash->Reset();
 
     // Clear the message digest
     std::memset(message_digest, 0, sizeof(message_digest));
@@ -576,6 +600,23 @@ void HMAC::Reset()
  */
 void HMAC::SetKey(const std::span<const std::uint8_t> key)
 {
+    // If there is no hash object, create one (this might be due to std::move
+    // being used on the object)
+    if (!hash)
+    {
+        // Create the hash object
+        hash = CreateHashObject(hash_algorithm);
+
+        // Ensure the pointer is valid
+        if (!hash) throw HashException("Failed to create hashing object");
+
+        // Set spacing preference
+        hash->SpaceSeparateWords(space_separate_words);
+
+        // Store the fixed block size to avoid repetitive function calls
+        block_size = hash->GetBlockSize();
+    }
+
     // Was a key previously used with this hash object?
     if (keyed)
     {
@@ -784,6 +825,8 @@ void HMAC::Finalize()
  */
 std::string HMAC::Result() const
 {
+    if (!hash) throw HashException("No hashing object exists");
+
     return hash->Result();
 }
 
@@ -810,6 +853,8 @@ std::string HMAC::Result() const
  */
 std::span<std::uint8_t> HMAC::Result(std::span<std::uint8_t> result) const
 {
+    if (!hash) throw HashException("No hashing object exists");
+
     return hash->Result(result);
 }
 
