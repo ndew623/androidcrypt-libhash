@@ -352,8 +352,6 @@ SHA384::~SHA384() noexcept
     SecUtil::SecureErase(input_block, sizeof(input_block));
     SecUtil::SecureErase(input_block_length);
     SecUtil::SecureErase(&message_length, sizeof(message_length));
-    SecUtil::SecureErase(digest_finalized);
-    SecUtil::SecureErase(corrupted);
     SecUtil::SecureErase(W, sizeof(W));
     SecUtil::SecureErase(a);
     SecUtil::SecureErase(b);

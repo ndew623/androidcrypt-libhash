@@ -153,28 +153,27 @@ class SHA384 final : public Hash
         bool operator==(const SHA384 &other) const noexcept;
         bool operator!=(const SHA384 &other) const noexcept;
 
-        virtual void Reset() noexcept override;
+        void Reset() noexcept override;
 
-        virtual void Input(const std::span<const std::uint8_t> data) override;
-        virtual void Input(const std::string_view data) override;
+        void Input(const std::span<const std::uint8_t> data) override;
+        void Input(const std::string_view data) override;
 
-        virtual void Finalize() override;
+        void Finalize() override;
 
-        virtual std::string Result() const override;
-        virtual std::span<std::uint8_t> Result(
+        std::string Result() const override;
+        std::span<std::uint8_t> Result(
                                 std::span<std::uint8_t> result) const override;
         SHA384ResultWordSpan Result(SHA384ResultWordSpan result) const;
 
-        virtual constexpr std::size_t GetBlockSize() const noexcept override
+        constexpr std::size_t GetBlockSize() const noexcept override
         {
             return Block_Size;
         }
-        virtual constexpr std::size_t GetDigestLength() const noexcept override
+        constexpr std::size_t GetDigestLength() const noexcept override
         {
             return Digest_Octet_Count;
         }
-        virtual constexpr HashAlgorithm GetHashAlgorithm()
-                                                        const noexcept override
+        constexpr HashAlgorithm GetHashAlgorithm() const noexcept override
         {
             return HashAlgorithm::SHA384;
         }

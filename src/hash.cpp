@@ -140,10 +140,10 @@ Hash::Hash(bool spaces) noexcept :
  */
 Hash::~Hash() noexcept
 {
+    // For security reasons, zero all internal data
     SecUtil::SecureErase(space_separate_words);
-    // The following are cleared by the Reset() function in derived objects:
-    //      digest_finalized
-    //      corrupted
+    SecUtil::SecureErase(digest_finalized);
+    SecUtil::SecureErase(corrupted);
 }
 
 /*
