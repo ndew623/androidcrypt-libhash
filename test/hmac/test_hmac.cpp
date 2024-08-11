@@ -957,7 +957,6 @@ STF_TEST(HMAC, TestMoveConstructor)
                   oss2.str());
 }
 
-
 STF_TEST(HMAC, HashResetHash)
 {
     std::string key = "key";
