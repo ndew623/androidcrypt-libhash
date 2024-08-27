@@ -762,7 +762,7 @@ void SHA512::ProcessMessageBlock(const std::uint8_t message_block[Block_Size])
  *      Nothing.
  *
  *  Comments:
- *      This function will finalize the hash computation.
+ *      None.
  */
 void SHA512::Finalize()
 {
