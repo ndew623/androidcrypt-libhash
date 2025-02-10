@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Define the hashing library project
+# Define the Cryptographic Hashing project
 project(libhash
-        VERSION 1.0.2.0
+        VERSION 1.0.3.0
         DESCRIPTION "Cryptographic Hashing Library"
         LANGUAGES CXX)
 
