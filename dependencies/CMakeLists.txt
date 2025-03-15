@@ -8,7 +8,7 @@ else()
     set(TERRAPANE_SOURCE_URI "https://github.com/terrapane")
 endif()
 
-
+# Get the Simple Test Framework if building tests
 if(libhash_BUILD_TESTS)
     # Fetch the Simple Test Framework library
     FetchContent_Declare(stf
