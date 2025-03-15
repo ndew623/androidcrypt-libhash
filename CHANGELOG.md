@@ -1,5 +1,9 @@
 # Change Log
 
+v1.0.4
+
+- Updated library dependencies for FreeBSD builds
+
 v1.0.3
 
 - Updated library dependencies
