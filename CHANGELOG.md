@@ -1,5 +1,9 @@
 # Change Log
 
+v1.0.5
+
+- Added an implementation of SHA-224
+
 v1.0.4
 
 - Updated library dependencies for FreeBSD builds

@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <terra/crypto/hashing/hmac.h>
 #include <terra/crypto/hashing/sha1.h>
+#include <terra/crypto/hashing/sha224.h>
 #include <terra/crypto/hashing/sha256.h>
 #include <terra/crypto/hashing/sha384.h>
 #include <terra/crypto/hashing/sha512.h>
@@ -77,6 +78,11 @@ std::unique_ptr<Hash> CloneHashFunction(const std::unique_ptr<Hash> &source)
                 std::make_unique<SHA1>(*(dynamic_cast<SHA1 *>(source.get())));
             break;
 
+        case HashAlgorithm::SHA224:
+            new_hash = std::make_unique<SHA224>(
+                *(dynamic_cast<SHA224 *>(source.get())));
+            break;
+
         case HashAlgorithm::SHA256:
             new_hash = std::make_unique<SHA256>(
                 *(dynamic_cast<SHA256 *>(source.get())));
@@ -93,7 +99,7 @@ std::unique_ptr<Hash> CloneHashFunction(const std::unique_ptr<Hash> &source)
             break;
 
         default:
-            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 4,
+            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 5,
                           "New hash algorithms need explicit support here");
             throw HashException("Unknown hashing function requested");
             break;
@@ -128,7 +134,7 @@ bool CompareHashFunction(const std::unique_ptr<Hash> &hash1,
     bool result{};
 
     // Ensure the source object is valid
-    if (!hash1 || !hash2) throw HashException("The hash object(s) are invalid");
+    if (!hash1 || !hash2) throw HashException("Comparing invalid hash object");
 
     // Ensure the two objects are of the same type
     if (hash1->GetHashAlgorithm() != hash2->GetHashAlgorithm()) return false;
@@ -139,6 +145,11 @@ bool CompareHashFunction(const std::unique_ptr<Hash> &hash1,
         case HashAlgorithm::SHA1:
             result = (*dynamic_cast<SHA1 *>(hash1.get()) ==
                       *dynamic_cast<SHA1 *>(hash2.get()));
+            break;
+
+        case HashAlgorithm::SHA224:
+            result = (*dynamic_cast<SHA256*>(hash1.get()) ==
+                      *dynamic_cast<SHA256 *>(hash2.get()));
             break;
 
         case HashAlgorithm::SHA256:
@@ -157,7 +168,7 @@ bool CompareHashFunction(const std::unique_ptr<Hash> &hash1,
             break;
 
         default:
-            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 4,
+            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 5,
                           "New hash algorithms need explicit support here");
             throw HashException("Unknown hashing function requested");
             break;

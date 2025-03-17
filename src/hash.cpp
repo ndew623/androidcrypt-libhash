@@ -21,6 +21,7 @@
 #include <cstring>
 #include <terra/crypto/hashing/hash.h>
 #include <terra/crypto/hashing/sha1.h>
+#include <terra/crypto/hashing/sha224.h>
 #include <terra/crypto/hashing/sha256.h>
 #include <terra/crypto/hashing/sha384.h>
 #include <terra/crypto/hashing/sha512.h>
@@ -57,6 +58,10 @@ std::size_t GetHashDigestLength(HashAlgorithm hash_algorithm)
             length = 20;
             break;
 
+        case HashAlgorithm::SHA224:
+            length = 28;
+            break;
+
         case HashAlgorithm::SHA256:
             length = 32;
             break;
@@ -70,6 +75,8 @@ std::size_t GetHashDigestLength(HashAlgorithm hash_algorithm)
             break;
 
         default:
+            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 5,
+                          "New hash algorithms need explicit support here");
             length = 0;
             break;
     }
@@ -353,6 +360,10 @@ HashPointer CreateHashObject(HashAlgorithm algorithm)
             hash = std::make_unique<SHA1>();
             break;
 
+        case HashAlgorithm::SHA224:
+            hash = std::make_unique<SHA224>();
+            break;
+
         case HashAlgorithm::SHA256:
             hash = std::make_unique<SHA256>();
             break;
@@ -366,6 +377,8 @@ HashPointer CreateHashObject(HashAlgorithm algorithm)
             break;
 
         default:
+            static_assert(static_cast<unsigned>(HashAlgorithm::Unknown) == 5,
+                          "New hash algorithms need explicit support here");
             throw HashException("Unknown hashing function requested");
             break;
     }

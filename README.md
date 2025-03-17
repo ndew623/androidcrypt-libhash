@@ -7,6 +7,7 @@ digest.
 The algorithms contained in this library include:
 
 * SHA-1
+* SHA-224
 * SHA-256
 * SHA-384
 * SHA-512

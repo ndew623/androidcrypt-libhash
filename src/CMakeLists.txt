@@ -1,6 +1,6 @@
 # Create the library
-add_library(hash STATIC hash.cpp hmac.cpp sha1.cpp sha256.cpp sha384.cpp
-                        sha512.cpp)
+add_library(hash STATIC hash.cpp hmac.cpp sha1.cpp sha224.cpp sha256.cpp
+                        sha384.cpp sha512.cpp)
 add_library(Terra::libhash ALIAS hash)
 
 # Specify the internal and public include directories
