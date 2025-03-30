@@ -1,5 +1,9 @@
 # Change Log
 
+v1.0.6
+
+- Added a missing #include line
+
 v1.0.5
 
 - Added an implementation of SHA-224
