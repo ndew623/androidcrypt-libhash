@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <cstring>
+#include <climits>
 #include <algorithm>
 #include <terra/crypto/hashing/hmac.h>
 #include <terra/crypto/hashing/sha1.h>
