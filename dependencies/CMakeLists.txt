@@ -26,7 +26,7 @@ endif()
 # Fetch the common security-related utility functions
 FetchContent_Declare(secutil
     GIT_REPOSITORY ${TERRAPANE_SOURCE_URI}/secutil.git
-    GIT_TAG        v1.0.4
+    GIT_TAG        v1.0.5
     GIT_SHALLOW    true)
 
 # Fetch the bit-related utility functions
@@ -36,10 +36,8 @@ FetchContent_Declare(bitutil
     GIT_SHALLOW    true)
 
 # If not installing libhash, turn off installation for dependencies
-if(NOT libhash_INSTALL)
-    set(secutil_INSTALL OFF)
-    set(bitutil_INSTALL OFF)
-endif()
+set(secutil_INSTALL ${libhash_INSTALL})
+set(bitutil_INSTALL ${libhash_INSTALL})
 
 # Make dependencies available
 FetchContent_MakeAvailable(secutil bitutil)

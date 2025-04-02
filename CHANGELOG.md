@@ -2,6 +2,7 @@
 
 v1.0.6
 
+- Updated the security utilities library
 - Added a missing #include line
 
 v1.0.5
