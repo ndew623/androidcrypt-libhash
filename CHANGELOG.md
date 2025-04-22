@@ -1,5 +1,9 @@
 # Change Log
 
+v1.0.7
+
+- Updated the security utilities library
+
 v1.0.6
 
 - Updated the security utilities library

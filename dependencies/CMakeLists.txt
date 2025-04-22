@@ -26,7 +26,7 @@ endif()
 # Fetch the common security-related utility functions
 FetchContent_Declare(secutil
     GIT_REPOSITORY ${TERRAPANE_SOURCE_URI}/secutil.git
-    GIT_TAG        v1.0.5
+    GIT_TAG        v1.0.6
     GIT_SHALLOW    true)
 
 # Fetch the bit-related utility functions
