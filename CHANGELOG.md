@@ -2,7 +2,8 @@
 
 v1.0.7
 
-- Updated the security utilities library
+- Updated the dependency libraries
+- Made warnings stricter
 
 v1.0.6
 
